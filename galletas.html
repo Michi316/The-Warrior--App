@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Warriors - Admin Galletas</title>
+    <link rel="stylesheet" href="empanadas.css"> </head>
+<body>
+
+    <div class="contenedor-panel">
+        <a href="index.html" class="btn-volver">← Volver al Menú</a>
+        <h2 class="subtitulo-seccion">Control de Galletas 🍪</h2>
+        
+        <div class="contenedor-resumen">
+            <div class="tarjeta-resumen">
+                <h3>Ganado Hoy</h3>
+                <p id="ganancias-hoy">$0.00</p>
+            </div>
+            <div class="tarjeta-resumen">
+                <h3>Personas Hoy</h3>
+                <p id="personas-hoy">0</p>
+            </div>
+        </div>
+
+        <form class="formulario-admin" onsubmit="event.preventDefault(); guardarVenta();">
+            <div class="fila-formulario">
+                <input type="text" id="cliente" placeholder="Nombre del Cliente" required>
+                <input type="text" id="sabor" placeholder="Sabor de Galleta" required>
+                <input type="number" id="cantidad" placeholder="Cantidad" min="1" step="1" required>
+                <input type="number" id="precio" placeholder="Precio $" min="0.01" step="0.01" required>
+                <button type="submit" class="btn-registrar">Registrar Venta</button>
+            </div>
+        </form>
+
+        <div class="barra-tabla">
+            <button class="btn-actualizar" onclick="archivarMesActual()">🔄 Actualizar Registro</button>
+        </div>
+
+        <div class="tabla-responsiva">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Sabor</th>
+                        <th>Cantidad</th>
+                        <th>Precio Unitario</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-datos"></tbody>
+            </table>
+        </div>
+
+        <div class="contenedor-historial">
+            <div class="cabecera-historial-seccion">
+                <h3>Historial de Registros</h3>
+                <button class="btn-eliminar-todo-historial" onclick="eliminarTodoElHistorialGalletas()">⚠️ Borrar Todo el Historial</button>
+            </div>
+            <div class="lista-meses" id="lista-historial-meses"></div>
+        </div>
+    </div>
+
+    <div id="modal-historial" class="modal">
+        <div class="modal-contenido">
+            <span class="cerrar-modal" onclick="cerrarModal()">&times;</span>
+            <h2 id="titulo-modal-historial">Historial</h2>
+            <div class="tabla-responsiva">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Sabor</th>
+                            <th>Cantidad</th>
+                            <th>Precio Unitario</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-datos-historial"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let db = JSON.parse(localStorage.getItem('tw_galletas')) || [];
+        let historialDb = JSON.parse(localStorage.getItem('tw_galletas_historial')) || [];
+        
+        actualizarTabla();
+        renderizarListaHistorial();
+
+        function guardarVenta() {
+            const fecha = new Date().toLocaleDateString('es-ES');
+            const cliente = document.getElementById('cliente').value.trim();
+            const sabor = document.getElementById('sabor').value.trim();
+            const cantidad = parseInt(document.getElementById('cantidad').value);
+            const precio = parseFloat(document.getElementById('precio').value);
+            const total = cantidad * precio;
+            const estado = 'Pago';
+
+            db.push({ fecha, cliente, sabor, cantidad, precio, total, estado });
+            localStorage.setItem('tw_galletas', JSON.stringify(db));
+            
+            document.getElementById('cliente').value = '';
+            document.getElementById('sabor').value = '';
+            document.getElementById('cantidad').value = '';
+            document.getElementById('precio').value = '';
+            
+            actualizarTabla();
+        }
+
+        function actualizarTabla() {
+            const tbody = document.getElementById('tabla-datos');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            db.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                const claseColor = (item.estado || 'Pago') === 'Pago' ? 'pago' : 'pendiente';
+
+                tr.innerHTML = `
+                    <td>${item.fecha}</td>
+                    <td>${item.cliente}</td>
+                    <td>${item.sabor}</td>
+                    <td>${item.cantidad}</td>
+                    <td>$${item.precio.toFixed(2)}</td>
+                    <td>$${item.total.toFixed(2)}</td>
+                    <td>
+                        <select class="select-estado-tabla ${claseColor}" onchange="cambiarEstadoLinea(${index}, this.value)">
+                            <option value="Pago" ${(item.estado || 'Pago') === 'Pago' ? 'selected' : ''}>Pago</option>
+                            <option value="Pendiente" ${item.estado === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button class="btn-eliminar" onclick="eliminarRegistroGalleta(${index})" title="Eliminar">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            actualizarResumenDiario();
+        }
+
+        function eliminarRegistroGalleta(index) {
+            if (confirm("¿Estás seguro de que quieres eliminar este registro?")) {
+                db.splice(index, 1);
+                localStorage.setItem('tw_galletas', JSON.stringify(db));
+                actualizarTabla();
+            }
+        }
+
+        function cambiarEstadoLinea(index, nuevoEstado) {
+            db[index].estado = nuevoEstado;
+            localStorage.setItem('tw_galletas', JSON.stringify(db));
+            actualizarTabla();
+        }
+
+        function actualizarResumenDiario() {
+            const hoy = new Date().toLocaleDateString('es-ES');
+            const registrosHoy = db.filter(item => item.fecha === hoy);
+            const dineroHoy = registrosHoy
+                .filter(item => (item.estado || 'Pago') === 'Pago')
+                .reduce((suma, item) => suma + item.total, 0);
+
+            document.getElementById('ganancias-hoy').innerText = `$${dineroHoy.toFixed(2)}`;
+            document.getElementById('personas-hoy').innerText = registrosHoy.length;
+        }
+
+        function archivarMesActual() {
+            if (db.length === 0) return alert("No hay registros actuales para archivar.");
+            if (confirm("¿Mover todas las ventas de galletas al historial?")) {
+                const opciones = { month: 'long', year: 'numeric' };
+                const mesAnioTexto = new Date().toLocaleDateString('es-ES', opciones).toUpperCase();
+
+                historialDb.push({ id: Date.now(), periodo: mesAnioTexto, registros: [...db] });
+                localStorage.setItem('tw_galletas_historial', JSON.stringify(historialDb));
+                db = [];
+                localStorage.setItem('tw_galletas', JSON.stringify(db));
+
+                actualizarTabla();
+                renderizarListaHistorial();
+            }
+        }
+
+        function renderizarListaHistorial() {
+            const contenedor = document.getElementById('lista-historial-meses');
+            if (!contenedor) return;
+            contenedor.innerHTML = '';
+
+            if (historialDb.length === 0) {
+                contenedor.innerHTML = '<p style="color: rgba(255,255,255,0.4); font-style: italic;">No hay historial acumulado.</p>';
+                return;
+            }
+
+            historialDb.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'tarjeta-mes-historial';
+                div.innerHTML = `
+                    <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;" onclick="verDetalleHistorial(${item.id})">
+                        <span>📅 ${item.periodo}</span>
+                        <span class="txt-ver">Revisar historial →</span>
+                    </div>
+                    <button class="btn-borrar-mes" onclick="event.stopPropagation(); eliminarMesGalleta(${index})">×</button>
+                `;
+                contenedor.appendChild(div);
+            });
+        }
+
+        function eliminarMesGalleta(index) {
+            const password = prompt("Ingresa la clave para borrar este mes:");
+            if (password === "Michx-37") {
+                if (confirm("¿Eliminar este periodo permanentemente?")) {
+                    historialDb.splice(index, 1);
+                    localStorage.setItem('tw_galletas_historial', JSON.stringify(historialDb));
+                    renderizarListaHistorial();
+                }
+            } else if (password !== null) alert("❌ Clave incorrecta.");
+        }
+
+        function eliminarTodoElHistorialGalletas() {
+            if (historialDb.length === 0) return;
+            const password = prompt("Ingresa la clave para BORRAR TODO el historial:");
+            if (password === "Michx-37") {
+                if (confirm("🚨 ¿Borrar absolutamente todo el historial de galletas?")) {
+                    historialDb = [];
+                    localStorage.setItem('tw_galletas_historial', JSON.stringify(historialDb));
+                    renderizarListaHistorial();
+                }
+            } else if (password !== null) alert("❌ Clave incorrecta.");
+        }
+
+        function verDetalleHistorial(id) {
+            const archivo = historialDb.find(item => item.id === id);
+            if (!archivo) return;
+            document.getElementById('titulo-modal-historial').innerText = `Historial Galletas: ${archivo.periodo}`;
+            const tbodyModal = document.getElementById('tabla-datos-historial');
+            tbodyModal.innerHTML = '';
+
+            archivo.registros.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.fecha}</td>
+                    <td>${item.cliente}</td>
+                    <td>${item.sabor}</td>
+                    <td>${item.cantidad}</td>
+                    <td>$${item.precio.toFixed(2)}</td>
+                    <td>$${item.total.toFixed(2)}</td>
+                    <td style="color: #2ecc71; font-weight: bold;">${item.estado || 'Pago'}</td>
+                `;
+                tbodyModal.appendChild(tr);
+            });
+            document.getElementById('modal-historial').style.display = 'block';
+        }
+
+        function cerrarModal() { document.getElementById('modal-historial').style.display = 'none'; }
+    </script>
+</body>
+</html>

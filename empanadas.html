@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Warriors - Admin Empanadas</title>
+    <link rel="stylesheet" href="empanadas.css">
+</head>
+<body>
+
+    <div class="contenedor-panel">
+        <a href="index.html" class="btn-volver">← Volver al Menú</a>
+        <h2 class="subtitulo-seccion">Control de Empanadas 🥟</h2>
+        
+        <div class="contenedor-resumen">
+            <div class="tarjeta-resumen">
+                <h3>Ganado Hoy</h3>
+                <p id="ganancias-hoy">$0.00</p>
+            </div>
+            <div class="tarjeta-resumen">
+                <h3>Personas Hoy</h3>
+                <p id="personas-hoy">0</p>
+            </div>
+        </div>
+
+        <form class="formulario-admin" onsubmit="event.preventDefault(); guardarVenta();">
+            <div class="fila-formulario">
+                <input type="text" id="cliente" placeholder="Nombre del Cliente" required>
+                <input type="text" id="tipo-empanada" placeholder="Tipo (Sabor)" required>
+                <input type="number" id="cant-empanada" placeholder="Cant. Empanadas" min="1" step="1" required>
+                <input type="number" id="precio-empanada" placeholder="Precio Empanada $" min="0.01" step="0.01" required>
+                
+                <div class="grupo-select">
+                    <label>¿Salsa?</label>
+                    <select id="salsa">
+                        <option value="No">No</option>
+                        <option value="Sí">Sí</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="fila-formulario linea-refresco">
+                <div class="grupo-select">
+                    <label>¿Refresco?</label>
+                    <select id="refresco" onchange="conmutarCamposRefresco()">
+                        <option value="No">No</option>
+                        <option value="Sí">Sí</option>
+                    </select>
+                </div>
+
+                <div class="grupo-select">
+                    <label>Tamaño</label>
+                    <select id="tamano-refresco" disabled>
+                        <option value="Vaso">Vaso</option>
+                        <option value="1 Litro">1 Litro</option>
+                        <option value="1.5 Litros">1.5 Litros</option>
+                        <option value="2 Litros">2 Litros</option>
+                    </select>
+                </div>
+
+                <input type="number" id="cant-refresco" placeholder="Cantidad / Vasos" min="1" step="1" disabled>
+                <input type="number" id="precio-refresco" placeholder="Precio Refresco $" min="0.01" step="0.01" disabled>
+                
+                <button type="submit" class="btn-registrar">Registrar Venta</button>
+            </div>
+        </form>
+
+        <div class="barra-tabla">
+            <button class="btn-actualizar" onclick="archivarMesActual()">🔄 Actualizar Registro</button>
+        </div>
+
+        <div class="tabla-responsiva">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Tipo Emp.</th>
+                        <th>Cant. Emp.</th>
+                        <th>Salsa</th>
+                        <th>Refresco</th>
+                        <th>Tamaño</th>
+                        <th>Cant. Ref.</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-datos"></tbody>
+            </table>
+        </div>
+
+        <div class="contenedor-historial">
+            <div class="cabecera-historial-seccion">
+                <h3>Historial de Registros</h3>
+                <button class="btn-eliminar-todo-historial" onclick="eliminarTodoElHistorialEmpanadas()">⚠️ Borrar Todo el Historial</button>
+            </div>
+            <div class="lista-meses" id="lista-historial-meses"></div>
+        </div>
+    </div>
+
+    <div id="modal-historial" class="modal">
+        <div class="modal-contenido">
+            <span class="cerrar-modal" onclick="cerrarModal()">&times;</span>
+            <h2 id="titulo-modal-historial">Historial</h2>
+            <div class="tabla-responsiva">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Tipo Emp.</th>
+                            <th>Cant. Emp.</th>
+                            <th>Salsa</th>
+                            <th>Refresco</th>
+                            <th>Tamaño</th>
+                            <th>Cant. Ref.</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-datos-historial"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let db = JSON.parse(localStorage.getItem('tw_empanadas')) || [];
+        let historialDb = JSON.parse(localStorage.getItem('tw_empanadas_historial')) || [];
+        
+        actualizarTabla();
+        renderizarListaHistorial();
+
+        function conmutarCamposRefresco() {
+            const tieneRefresco = document.getElementById('refresco').value === 'Sí';
+            document.getElementById('tamano-refresco').disabled = !tieneRefresco;
+            document.getElementById('cant-refresco').disabled = !tieneRefresco;
+            document.getElementById('precio-refresco').disabled = !tieneRefresco;
+            document.getElementById('cant-refresco').required = tieneRefresco;
+            document.getElementById('precio-refresco').required = tieneRefresco;
+        }
+
+        function guardarVenta() {
+            const fecha = new Date().toLocaleDateString('es-ES');
+            const cliente = document.getElementById('cliente').value.trim();
+            const tipo = document.getElementById('tipo-empanada').value.trim();
+            const cantEmp = parseInt(document.getElementById('cant-empanada').value);
+            const precioEmp = parseFloat(document.getElementById('precio-empanada').value);
+            const salsa = document.getElementById('salsa').value;
+            const refresco = document.getElementById('refresco').value;
+            
+            let tamanoRef = "-"; let cantRef = 0; let precioRef = 0;
+            if (refresco === 'Sí') {
+                tamanoRef = document.getElementById('tamano-refresco').value;
+                cantRef = parseInt(document.getElementById('cant-refresco').value) || 0;
+                precioRef = parseFloat(document.getElementById('precio-refresco').value) || 0;
+            }
+            
+            const total = (cantEmp * precioEmp) + (cantRef * precioRef);
+            db.push({ fecha, cliente, tipo, cantEmp, precioEmp, salsa, refresco, tamanoRef, cantRef, precioRef, total, estado: 'Pago' });
+            
+            localStorage.setItem('tw_empanadas', JSON.stringify(db));
+            document.getElementById('cliente').value = '';
+            document.getElementById('tipo-empanada').value = '';
+            document.getElementById('cant-empanada').value = '';
+            document.getElementById('precio-empanada').value = '';
+            document.getElementById('salsa').value = 'No';
+            document.getElementById('refresco').value = 'No';
+            conmutarCamposRefresco();
+            actualizarTabla();
+        }
+
+        function actualizarTabla() {
+            const tbody = document.getElementById('tabla-datos');
+            if (!tbody) return; tbody.innerHTML = '';
+
+            db.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                const claseColor = (item.estado || 'Pago') === 'Pago' ? 'pago' : 'pendiente';
+                tr.innerHTML = `
+                    <td>${item.fecha}</td>
+                    <td>${item.cliente}</td>
+                    <td>${item.tipo}</td>
+                    <td>${item.cantEmp}</td>
+                    <td>${item.salsa}</td>
+                    <td>${item.refresco}</td>
+                    <td>${item.tamanoRef}</td>
+                    <td>${item.refresco === 'Sí' ? item.cantRef : '-'}</td>
+                    <td>$${item.total.toFixed(2)}</td>
+                    <td>
+                        <select class="select-estado-tabla ${claseColor}" onchange="cambiarEstadoLinea(${index}, this.value)">
+                            <option value="Pago" ${(item.estado || 'Pago') === 'Pago' ? 'selected' : ''}>Pago</option>
+                            <option value="Pendiente" ${item.estado === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button class="btn-eliminar" onclick="eliminarRegistroEmpanada(${index})">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            actualizarResumenDiario();
+        }
+
+        function eliminarRegistroEmpanada(index) {
+            if (confirm("¿Eliminar esta venta?")) {
+                db.splice(index, 1);
+                localStorage.setItem('tw_empanadas', JSON.stringify(db));
+                actualizarTabla();
+            }
+        }
+
+        function cambiarEstadoLinea(index, nuevoEstado) {
+            db[index].estado = nuevoEstado;
+            localStorage.setItem('tw_empanadas', JSON.stringify(db));
+            actualizarTabla();
+        }
+
+        function actualizarResumenDiario() {
+            const hoy = new Date().toLocaleDateString('es-ES');
+            const registrosHoy = db.filter(item => item.fecha === hoy);
+            const dineroHoy = registrosHoy.filter(item => (item.estado || 'Pago') === 'Pago').reduce((suma, item) => suma + item.total, 0);
+            document.getElementById('ganancias-hoy').innerText = `$${dineroHoy.toFixed(2)}`;
+            document.getElementById('personas-hoy').innerText = registrosHoy.length;
+        }
+
+        function archivarMesActual() {
+            if (db.length === 0) return;
+            if (confirm("¿Archivar mes actual?")) {
+                const opciones = { month: 'long', year: 'numeric' };
+                const mesAnioTexto = new Date().toLocaleDateString('es-ES', opciones).toUpperCase();
+                historialDb.push({ id: Date.now(), periodo: mesAnioTexto, registros: [...db] });
+                localStorage.setItem('tw_empanadas_historial', JSON.stringify(historialDb));
+                db = []; localStorage.setItem('tw_empanadas', JSON.stringify(db));
+                actualizarTabla(); renderizarListaHistorial();
+            }
+        }
+
+        function renderizarListaHistorial() {
+            const contenedor = document.getElementById('lista-historial-meses');
+            if (!contenedor) return; contenedor.innerHTML = '';
+            if (historialDb.length === 0) { contenedor.innerHTML = '<p style="color:rgba(255,255,255,0.4);">Vacío.</p>'; return; }
+
+            historialDb.forEach((item, index) => {
+                const div = document.createElement('div'); div.className = 'tarjeta-mes-historial';
+                div.innerHTML = `
+                    <div style="flex:1; display:flex; justify-content:space-between; align-items:center;" onclick="verDetalleHistorial(${item.id})">
+                        <span>📅 ${item.periodo}</span> <span class="txt-ver">Ver →</span>
+                    </div>
+                    <button class="btn-borrar-mes" onclick="event.stopPropagation(); eliminarMesEmpanada(${index})">×</button>
+                `;
+                contenedor.appendChild(div);
+            });
+        }
+
+        function eliminarMesEmpanada(index) {
+            const password = prompt("Clave de seguridad:");
+            if (password === "Michx-37") {
+                if (confirm("¿Eliminar este mes?")) {
+                    historialDb.splice(index, 1);
+                    localStorage.setItem('tw_empanadas_historial', JSON.stringify(historialDb));
+                    renderizarListaHistorial();
+                }
+            } else if (password !== null) alert("❌ Clave incorrecta.");
+        }
+
+        function eliminarTodoElHistorialEmpanadas() {
+            if (historialDb.length === 0) return;
+            const password = prompt("Clave para BORRAR TODO:");
+            if (password === "Michx-37") {
+                if (confirm("🚨 ¿Borrar todo por completo?")) {
+                    historialDb = []; localStorage.setItem('tw_empanadas_historial', JSON.stringify(historialDb));
+                    renderizarListaHistorial();
+                }
+            } else if (password !== null) alert("❌ Clave incorrecta.");
+        }
+
+        function verDetalleHistorial(id) {
+            const archivo = historialDb.find(item => item.id === id); if (!archivo) return;
+            document.getElementById('titulo-modal-historial').innerText = `Historial Empanadas: ${archivo.periodo}`;
+            const tbodyModal = document.getElementById('tabla-datos-historial'); tbodyModal.innerHTML = '';
+            archivo.registros.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${item.fecha}</td><td>${item.cliente}</td><td>${item.tipo}</td><td>${item.cantEmp}</td><td>${item.salsa}</td><td>${item.refresco}</td><td>${item.tamanoRef}</td><td>${item.cantRef}</td><td>$${item.total.toFixed(2)}</td><td style="color:#2ecc71;">${item.estado || 'Pago'}</td>`;
+                tbodyModal.appendChild(tr);
+            });
+            document.getElementById('modal-historial').style.display = 'block';
+        }
+        function cerrarModal() { document.getElementById('modal-historial').style.display = 'none'; }
+    </script>
+</body>
+</html>

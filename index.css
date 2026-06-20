@@ -1,0 +1,178 @@
+/* IMPORTANTO LA FUENTE URBANA/GRAFFITI */
+@import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #4facfe 0%, #000428 100%);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow: hidden;
+}
+
+/* LETRAS ESTILO GRAFFITI CON BORDE NEGRO GRUESO */
+.titulo-principal {
+    font-family: 'Permanent Marker', cursive;
+    font-size: 3.6rem;
+    color: white;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 50px;
+    letter-spacing: 2px;
+    /* Genera el delineado perfecto alrededor de la letra */
+    text-shadow: 
+        -3px -3px 0 #000,  
+         3px -3px 0 #000,
+        -3px  3px 0 #000,
+         3px  3px 0 #000,
+         5px  5px 15px rgba(0,0,0,0.4);
+}
+
+.contenedor-tarjetas {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 950px;
+}
+
+/* --- ANIMACIÓN 1: FLOTADO SUAVE Y CONTINUO --- */
+@keyframes flotarEfecto {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+.tarjeta-menu {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    width: 250px;
+    height: 230px;
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+    font-size: 1.15rem;
+    text-align: center;
+    padding: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    cursor: pointer;
+    
+    /* Asignamos la animación de flotado */
+    animation: flotarEfecto 4s ease-in-out infinite;
+    transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+/* Desfasamos los tiempos para que no floten rígidas al mismo tiempo */
+.tarjeta-menu:nth-child(1) { animation-delay: 0s; }
+.tarjeta-menu:nth-child(2) { animation-delay: 0.7s; }
+.tarjeta-menu:nth-child(3) { animation-delay: 1.4s; }
+
+/* --- ANIMACIÓN 2: DINAMISMO AL PASAR EL MOUSE (HOVER) --- */
+.tarjeta-menu:hover {
+    transform: scale(1.06) rotate(2deg) !important; /* Se inclina un poco estilo urbano */
+    background: rgba(255, 255, 255, 0.16);
+    border-color: #4facfe;
+    box-shadow: 0 15px 35px rgba(79, 172, 254, 0.4);
+}
+
+/* La tarjeta de agregar se inclina al lado contrario para balancear */
+.tarjeta-agregar:hover {
+    transform: scale(1.06) rotate(-2deg) !important;
+}
+
+.tarjeta-agregar {
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    background: transparent;
+}
+
+.icono-mas {
+    font-size: 3.5rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 10px;
+    transition: transform 0.3s;
+}
+
+.tarjeta-menu:hover .icono-mas {
+    transform: rotate(90deg); /* El '+' gira al hacer hover */
+}
+
+/* --- DETALLES DE LOS DISEÑOS INTERNOS --- */
+.mini-cookie {
+    width: 75px;
+    height: 75px;
+    background: #deaf7d;
+    border-radius: 50%;
+    position: relative;
+    margin-bottom: 20px;
+    box-shadow: inset -4px -4px 0px rgba(0,0,0,0.15);
+    transition: transform 0.4s ease;
+    
+    /* Clip-path para hacer la mordida de la galleta transparente perfecta */
+    clip-path: polygon(
+        0% 0%, 75% 0%, 
+        72% 8%, 76% 22%, 86% 18%, 94% 32%, 86% 42%, 100% 48%,
+        100% 100%, 0% 100%
+    );
+}
+
+/* Reacción de la galleta al pasar el mouse por la tarjeta */
+.tarjeta-menu:hover .mini-cookie {
+    transform: scale(1.1) rotate(12deg);
+}
+
+.chip {
+    width: 8px;
+    height: 8px;
+    background: #543d2b;
+    border-radius: 50%;
+    position: absolute;
+}
+.c1 { top: 25px; left: 20px; }
+.c2 { top: 20px; left: 45px; }
+.c3 { top: 48px; left: 18px; }
+.c4 { top: 50px; left: 42px; }
+.c5 { top: 36px; left: 32px; }
+
+.mini-empanada {
+    width: 80px;
+    height: 40px;
+    background: #f1c40f;
+    border-radius: 80px 80px 0 0;
+    margin-bottom: 25px;
+    position: relative;
+    box-shadow: inset 0 -4px 0px rgba(0,0,0,0.15);
+    transition: transform 0.3s;
+}
+
+.tarjeta-menu:hover .mini-empanada {
+    transform: scale(1.1) translateY(-3px);
+}
+
+.mini-empanada::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: #d68910;
+    border-radius: 2px;
+}
