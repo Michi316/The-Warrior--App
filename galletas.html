@@ -4,24 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Warriors - Admin Galletas</title>
-    <link rel="stylesheet" href="empanadas.css"> </head>
+    <link rel="stylesheet" href="galletas.css"> </head>
 <body>
 
     <div class="contenedor-panel">
         <a href="index.html" class="btn-volver">← Volver al Menú</a>
         <h2 class="subtitulo-seccion">Control de Galletas 🍪</h2>
         
-        <div class="contenedor-resumen">
-            <div class="tarjeta-resumen">
-                <h3>Ganado Hoy</h3>
-                <p id="ganancias-hoy">$0.00</p>
-            </div>
-            <div class="tarjeta-resumen">
-                <h3>Personas Hoy</h3>
-                <p id="personas-hoy">0</p>
-            </div>
-        </div>
+        <div class="contenedor-resumen"> <!-- ESTE ES EL CONTENEDOR PRINCIPAL -->
 
+    <!-- Cuadro 1 -->
+    <div class="tarjeta-resumen">
+        <h3>Ganado Hoy</h3>
+        <p id="ganancias-hoy">$0.00</p>
+    </div>
+
+    <!-- Cuadro 2 -->
+    <div class="tarjeta-resumen">
+        <h3>Personas Hoy</h3>
+        <p id="personas-hoy">0</p>
+    </div>
+
+    <!-- Cuadro 3 (EL NUEVO) -->
+    <div class="tarjeta-resumen">
+        <h3>Galletas Vendidas</h3>
+        <p id="galletas-totales">0</p>
+    </div>
+
+</div> <!-- EL CONTENEDOR PRINCIPAL DEBE CERRAR AQUÍ, DESPUÉS DEL TERCER CUADRO -->
         <form class="formulario-admin" onsubmit="event.preventDefault(); guardarVenta();">
             <div class="fila-formulario">
                 <input type="text" id="cliente" placeholder="Nombre del Cliente" required>
@@ -159,14 +169,20 @@
         }
 
         function actualizarResumenDiario() {
-            const hoy = new Date().toLocaleDateString('es-ES');
-            const registrosHoy = db.filter(item => item.fecha === hoy);
-            const dineroHoy = registrosHoy
+            // 1. Calculamos el dinero total (solo de los que están en estado "Pago")
+            const dineroTotal = db
                 .filter(item => (item.estado || 'Pago') === 'Pago')
                 .reduce((suma, item) => suma + item.total, 0);
 
-            document.getElementById('ganancias-hoy').innerText = `$${dineroHoy.toFixed(2)}`;
-            document.getElementById('personas-hoy').innerText = registrosHoy.length;
+            // 2. Calculamos el total de galletas vendidas (sumamos la cantidad de todos los registros)
+            // Usamos Number() por si acaso el valor se guardó como texto
+            const totalGalletas = db.reduce((suma, item) => suma + Number(item.cantidad), 0);
+
+            // 3. Actualizamos los textos en pantalla
+            document.getElementById('ganancias-hoy').innerText = `$${dineroTotal.toFixed(2)}`;
+            document.getElementById('personas-hoy').innerText = db.length;
+            // Actualizamos el nuevo cuadro de galletas
+            document.getElementById('galletas-totales').innerText = totalGalletas;
         }
 
         function archivarMesActual() {
@@ -235,12 +251,25 @@
         function verDetalleHistorial(id) {
             const archivo = historialDb.find(item => item.id === id);
             if (!archivo) return;
-            document.getElementById('titulo-modal-historial').innerText = `Historial Galletas: ${archivo.periodo}`;
+            
+            // Calculamos cuánto se ha pagado EN ESE MES archivado
+            const totalPagadoMes = archivo.registros
+                .filter(item => (item.estado || 'Pago') === 'Pago')
+                .reduce((suma, item) => suma + item.total, 0);
+
+            // Actualizamos el título del modal para mostrar el total del mes
+            document.getElementById('titulo-modal-historial').innerHTML = `
+                Historial Galletas: ${archivo.periodo} <br>
+                <span style="color: #2ecc71; font-size: 1.2rem; display: block; margin-top: 10px;">Ganancia Total: $${totalPagadoMes.toFixed(2)}</span>
+            `;
+
             const tbodyModal = document.getElementById('tabla-datos-historial');
             tbodyModal.innerHTML = '';
 
-            archivo.registros.forEach(item => {
+            archivo.registros.forEach((item, indexRegistro) => {
                 const tr = document.createElement('tr');
+                const claseColor = (item.estado || 'Pago') === 'Pago' ? 'pago' : 'pendiente';
+                
                 tr.innerHTML = `
                     <td>${item.fecha}</td>
                     <td>${item.cliente}</td>
@@ -248,11 +277,29 @@
                     <td>${item.cantidad}</td>
                     <td>$${item.precio.toFixed(2)}</td>
                     <td>$${item.total.toFixed(2)}</td>
-                    <td style="color: #2ecc71; font-weight: bold;">${item.estado || 'Pago'}</td>
+                    <td>
+                        <select class="select-estado-tabla ${claseColor}" onchange="cambiarEstadoLineaHistorial(${id}, ${indexRegistro}, this.value)">
+                            <option value="Pago" ${(item.estado || 'Pago') === 'Pago' ? 'selected' : ''}>Pago</option>
+                            <option value="Pendiente" ${item.estado === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
+                        </select>
+                    </td>
                 `;
                 tbodyModal.appendChild(tr);
             });
             document.getElementById('modal-historial').style.display = 'block';
+        }
+
+        function cambiarEstadoLineaHistorial(idMes, indexRegistro, nuevoEstado) {
+            // Buscamos el mes específico en el historial
+            const mesIndex = historialDb.findIndex(item => item.id === idMes);
+            if (mesIndex !== -1) {
+                // Actualizamos el estado de ese registro
+                historialDb[mesIndex].registros[indexRegistro].estado = nuevoEstado;
+                // Guardamos en la memoria del navegador
+                localStorage.setItem('tw_galletas_historial', JSON.stringify(historialDb));
+                // Volvemos a cargar la ventana del historial para que el Total General se actualice de inmediato
+                verDetalleHistorial(idMes);
+            }
         }
 
         function cerrarModal() { document.getElementById('modal-historial').style.display = 'none'; }

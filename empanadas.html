@@ -21,6 +21,10 @@
                 <h3>Personas Hoy</h3>
                 <p id="personas-hoy">0</p>
             </div>
+            <div class="tarjeta-resumen">
+                <h3>Empanadas Vendidas</h3>
+                <p id="empanadas-totales">0</p>
+            </div>
         </div>
 
         <form class="formulario-admin" onsubmit="event.preventDefault(); guardarVenta();">
@@ -126,6 +130,9 @@
     </div>
 
     <script>
+        const esEmpanadas = true;
+        const esGalletas = false;
+
         let db = JSON.parse(localStorage.getItem('tw_empanadas')) || [];
         let historialDb = JSON.parse(localStorage.getItem('tw_empanadas_historial')) || [];
         
@@ -218,22 +225,41 @@
         }
 
         function actualizarResumenDiario() {
-            const hoy = new Date().toLocaleDateString('es-ES');
-            const registrosHoy = db.filter(item => item.fecha === hoy);
-            const dineroHoy = registrosHoy.filter(item => (item.estado || 'Pago') === 'Pago').reduce((suma, item) => suma + item.total, 0);
-            document.getElementById('ganancias-hoy').innerText = `$${dineroHoy.toFixed(2)}`;
-            document.getElementById('personas-hoy').innerText = registrosHoy.length;
+            const dineroTotal = db
+                .filter(item => (item.estado || 'Pago') === 'Pago')
+                .reduce((suma, item) => suma + (item.total || 0), 0);
+            
+            document.getElementById('ganancias-hoy').innerText = `$${dineroTotal.toFixed(2)}`;
+            document.getElementById('personas-hoy').innerText = db.length;
+
+            if (esEmpanadas) {
+                const elEmpanadas = document.getElementById('empanadas-totales');
+                if (elEmpanadas) {
+                    const totalEmp = db.reduce((suma, item) => suma + Number(item.cantEmp || 0), 0);
+                    elEmpanadas.innerText = totalEmp;
+                }
+            } 
         }
 
         function archivarMesActual() {
             if (db.length === 0) return;
-            if (confirm("¿Archivar mes actual?")) {
-                const opciones = { month: 'long', year: 'numeric' };
-                const mesAnioTexto = new Date().toLocaleDateString('es-ES', opciones).toUpperCase();
-                historialDb.push({ id: Date.now(), periodo: mesAnioTexto, registros: [...db] });
+            const opciones = { month: 'long', year: 'numeric' };
+            const mesAnioTexto = new Date().toLocaleDateString('es-ES', opciones).toUpperCase();
+
+            const indexMes = historialDb.findIndex(item => item.periodo === mesAnioTexto);
+
+            if (confirm("¿Archivar ventas en el mes de " + mesAnioTexto + "?")) {
+                if (indexMes !== -1) {
+                    historialDb[indexMes].registros.push(...db);
+                } else {
+                    historialDb.push({ id: Date.now(), periodo: mesAnioTexto, registros: [...db] });
+                }
+                
                 localStorage.setItem('tw_empanadas_historial', JSON.stringify(historialDb));
-                db = []; localStorage.setItem('tw_empanadas', JSON.stringify(db));
-                actualizarTabla(); renderizarListaHistorial();
+                db = []; 
+                localStorage.setItem('tw_empanadas', JSON.stringify(db));
+                actualizarTabla(); 
+                renderizarListaHistorial();
             }
         }
 
@@ -276,17 +302,60 @@
             } else if (password !== null) alert("❌ Clave incorrecta.");
         }
 
+        // --- HISTORIAL CON CÁLCULO DINÁMICO Y EDICIÓN ---
         function verDetalleHistorial(id) {
-            const archivo = historialDb.find(item => item.id === id); if (!archivo) return;
-            document.getElementById('titulo-modal-historial').innerText = `Historial Empanadas: ${archivo.periodo}`;
-            const tbodyModal = document.getElementById('tabla-datos-historial'); tbodyModal.innerHTML = '';
-            archivo.registros.forEach(item => {
+            const archivo = historialDb.find(item => item.id === id); 
+            if (!archivo) return;
+
+            // Calculamos el total pagado de este mes específico dinámicamente
+            const totalPagadoMes = archivo.registros
+                .filter(item => (item.estado || 'Pago') === 'Pago')
+                .reduce((suma, item) => suma + (item.total || 0), 0);
+
+            document.getElementById('titulo-modal-historial').innerHTML = `
+                Historial Empanadas: ${archivo.periodo} <br>
+                <span style="color: #2ecc71; font-size: 1.2rem; display: block; margin-top: 10px;">Ganancia Total: $${totalPagadoMes.toFixed(2)}</span>
+            `;
+
+            const tbodyModal = document.getElementById('tabla-datos-historial'); 
+            tbodyModal.innerHTML = '';
+            
+            archivo.registros.forEach((item, index) => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${item.fecha}</td><td>${item.cliente}</td><td>${item.tipo}</td><td>${item.cantEmp}</td><td>${item.salsa}</td><td>${item.refresco}</td><td>${item.tamanoRef}</td><td>${item.cantRef}</td><td>$${item.total.toFixed(2)}</td><td style="color:#2ecc71;">${item.estado || 'Pago'}</td>`;
+                const claseColor = (item.estado || 'Pago') === 'Pago' ? 'pago' : 'pendiente';
+                
+                tr.innerHTML = `
+                    <td>${item.fecha}</td>
+                    <td>${item.cliente}</td>
+                    <td>${item.tipo}</td>
+                    <td>${item.cantEmp}</td>
+                    <td>${item.salsa}</td>
+                    <td>${item.refresco}</td>
+                    <td>${item.tamanoRef}</td>
+                    <td>${item.refresco === 'Sí' ? item.cantRef : '-'}</td>
+                    <td>$${item.total.toFixed(2)}</td>
+                    <td>
+                        <select class="select-estado-tabla ${claseColor}" onchange="cambiarEstadoLineaHistorial(${id}, ${index}, this.value)">
+                            <option value="Pago" ${(item.estado || 'Pago') === 'Pago' ? 'selected' : ''}>Pago</option>
+                            <option value="Pendiente" ${item.estado === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
+                        </select>
+                    </td>
+                `;
                 tbodyModal.appendChild(tr);
             });
             document.getElementById('modal-historial').style.display = 'block';
         }
+
+        // Esta función actualiza el registro en el historial y refresca la vista
+        function cambiarEstadoLineaHistorial(idMes, indexRegistro, nuevoEstado) {
+            const mesIndex = historialDb.findIndex(item => item.id === idMes);
+            if (mesIndex !== -1) {
+                historialDb[mesIndex].registros[indexRegistro].estado = nuevoEstado;
+                localStorage.setItem('tw_empanadas_historial', JSON.stringify(historialDb));
+                verDetalleHistorial(idMes); // Recalcula y refresca el modal
+            }
+        }
+
         function cerrarModal() { document.getElementById('modal-historial').style.display = 'none'; }
     </script>
 </body>
