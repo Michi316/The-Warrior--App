@@ -12,7 +12,7 @@
         <a href="index.html" class="btn-volver">← Volver al Menú</a>
         <h2 class="subtitulo-seccion">Control de Empanadas 🥟</h2>
         
-        <div class="contenedor-resumen">
+        <<div class="contenedor-resumen">
             <div class="tarjeta-resumen">
                 <h3>Ganado Hoy</h3>
                 <p id="ganancias-hoy">$0.00</p>
@@ -22,52 +22,62 @@
                 <p id="personas-hoy">0</p>
             </div>
             <div class="tarjeta-resumen">
-                <h3>Empanadas Vendidas</h3>
+                <h3>Empanadas</h3>
                 <p id="empanadas-totales">0</p>
+            </div>
+            <div class="tarjeta-resumen">
+                <h3>Combos</h3>
+                <p id="combos-totales">0</p>
             </div>
         </div>
 
         <form class="formulario-admin" onsubmit="event.preventDefault(); guardarVenta();">
-            <div class="fila-formulario">
-                <input type="text" id="cliente" placeholder="Nombre del Cliente" required>
-                <input type="text" id="tipo-empanada" placeholder="Tipo (Sabor)" required>
-                <input type="number" id="cant-empanada" placeholder="Cant. Empanadas" min="1" step="1" required>
-                <input type="number" id="precio-empanada" placeholder="Precio Empanada $" min="0.01" step="0.01" required>
-                
-                <div class="grupo-select">
-                    <label>¿Salsa?</label>
-                    <select id="salsa">
-                        <option value="No">No</option>
-                        <option value="Sí">Sí</option>
-                    </select>
-                </div>
-            </div>
+    <!-- LÍNEA 1: Empanadas -->
+    <div class="fila-formulario">
+        <input type="text" id="cliente" placeholder="Nombre" required>
+        <input type="text" id="tipo" placeholder="Sabor" required>
+        <input type="number" id="cantidad" placeholder="Cant. Emp." min="0" step="1">
+        <input type="number" id="precio" placeholder="Precio ($)" min="0" step="0.01">
+        
+        <select id="salsa">
+            <option value="No">Salsa: No</option>
+            <option value="Sí">Salsa: Sí</option>
+        </select>
+    </div>
 
-            <div class="fila-formulario linea-refresco">
-                <div class="grupo-select">
-                    <label>¿Refresco?</label>
-                    <select id="refresco" onchange="conmutarCamposRefresco()">
-                        <option value="No">No</option>
-                        <option value="Sí">Sí</option>
-                    </select>
-                </div>
+    <!-- LÍNEA 2: Combo -->
+    <div class="fila-formulario">
+        <div class="grupo-select">
+            <label>¿Combo?</label>
+            <select id="es-combo" onchange="toggleCombo()">
+                <option value="No">No</option>
+                <option value="Sí">Sí</option>
+            </select>
+        </div>
+        <input type="number" id="cant-combo" placeholder="Cant. Combos" min="0" step="1" disabled>
+        <input type="text" value="Precio: 3.00$" readonly style="background: rgba(255,255,255,0.1);">
+    </div>
 
-                <div class="grupo-select">
-                    <label>Tamaño</label>
-                    <select id="tamano-refresco" disabled>
-                        <option value="Vaso">Vaso</option>
-                        <option value="1 Litro">1 Litro</option>
-                        <option value="1.5 Litros">1.5 Litros</option>
-                        <option value="2 Litros">2 Litros</option>
-                    </select>
-                </div>
-
-                <input type="number" id="cant-refresco" placeholder="Cantidad / Vasos" min="1" step="1" disabled>
-                <input type="number" id="precio-refresco" placeholder="Precio Refresco $" min="0.01" step="0.01" disabled>
-                
-                <button type="submit" class="btn-registrar">Registrar Venta</button>
-            </div>
-        </form>
+    <!-- LÍNEA 3: Refrescos -->
+    <div class="fila-formulario linea-refresco">
+        <div class="grupo-select">
+            <label>¿Refresco?</label>
+            <select id="refresco" onchange="conmutarCamposRefresco()">
+                <option value="No">No</option>
+                <option value="Sí">Sí</option>
+            </select>
+        </div>
+        <select id="tamano-refresco" disabled>
+            <option value="Vaso">Vaso</option>
+            <option value="1 Litro">1 Litro</option>
+            <option value="1.5 Litros">1.5 Litros</option>
+        </select>
+        <input type="number" id="cant-refresco" placeholder="Cant." disabled>
+        <input type="number" id="precio-refresco" placeholder="Precio $" disabled>
+        
+        <button type="submit" class="btn-registrar">Registrar Venta</button>
+    </div>
+</form>
 
         <div class="barra-tabla">
             <button class="btn-actualizar" onclick="archivarMesActual()">🔄 Actualizar Registro</button>
@@ -148,35 +158,96 @@
             document.getElementById('precio-refresco').required = tieneRefresco;
         }
 
-        function guardarVenta() {
-            const fecha = new Date().toLocaleDateString('es-ES');
-            const cliente = document.getElementById('cliente').value.trim();
-            const tipo = document.getElementById('tipo-empanada').value.trim();
-            const cantEmp = parseInt(document.getElementById('cant-empanada').value);
-            const precioEmp = parseFloat(document.getElementById('precio-empanada').value);
-            const salsa = document.getElementById('salsa').value;
-            const refresco = document.getElementById('refresco').value;
-            
-            let tamanoRef = "-"; let cantRef = 0; let precioRef = 0;
-            if (refresco === 'Sí') {
-                tamanoRef = document.getElementById('tamano-refresco').value;
-                cantRef = parseInt(document.getElementById('cant-refresco').value) || 0;
-                precioRef = parseFloat(document.getElementById('precio-refresco').value) || 0;
-            }
-            
-            const total = (cantEmp * precioEmp) + (cantRef * precioRef);
-            db.push({ fecha, cliente, tipo, cantEmp, precioEmp, salsa, refresco, tamanoRef, cantRef, precioRef, total, estado: 'Pago' });
-            
-            localStorage.setItem('tw_empanadas', JSON.stringify(db));
-            document.getElementById('cliente').value = '';
-            document.getElementById('tipo-empanada').value = '';
-            document.getElementById('cant-empanada').value = '';
-            document.getElementById('precio-empanada').value = '';
-            document.getElementById('salsa').value = 'No';
-            document.getElementById('refresco').value = 'No';
-            conmutarCamposRefresco();
-            actualizarTabla();
-        }
+// Mostrar/Ocultar campos de combo
+// --- FUNCIONES DE CONTROL DE INTERFAZ ---
+
+// Activa/Desactiva los inputs de cantidad de combo
+function toggleCombo() {
+    const esCombo = document.getElementById('es-combo').value === 'Sí';
+    document.getElementById('cant-combo').disabled = !esCombo;
+}
+
+// Activa/Desactiva los campos de refresco según la selección
+function conmutarCamposRefresco() {
+    const tieneRefresco = document.getElementById('refresco').value === 'Sí';
+    document.getElementById('tamano-refresco').disabled = !tieneRefresco;
+    document.getElementById('cant-refresco').disabled = !tieneRefresco;
+    document.getElementById('precio-refresco').disabled = !tieneRefresco;
+}
+
+// --- FUNCIÓN GUARDAR VENTA (INTEGRADA) ---
+// --- FUNCIÓN GUARDAR VENTA (CORREGIDA) ---
+function guardarVenta() {
+    const fecha = new Date().toLocaleDateString('es-ES');
+    const cliente = document.getElementById('cliente').value.trim();
+    
+    // 1. Datos Empanadas (Usando los IDs reales de tu HTML)
+    const tipo = document.getElementById('tipo').value.trim();
+    const cantEmp = parseInt(document.getElementById('cantidad').value) || 0;
+    const precioEmp = parseFloat(document.getElementById('precio').value) || 0;
+    
+    // Estos campos SÍ existen en tu HTML
+    const salsa = document.getElementById('salsa').value; 
+    
+    // 2. Datos Combo
+    const esCombo = document.getElementById('es-combo').value === 'Sí';
+    const cantCombo = parseInt(document.getElementById('cant-combo').value) || 0;
+    const precioCombo = 3.00; 
+    const totalCombo = esCombo ? (cantCombo * precioCombo) : 0;
+    
+    // 3. Datos Refresco
+    const refresco = document.getElementById('refresco').value;
+    let tamanoRef = "-"; 
+    let cantRef = 0; 
+    let precioRef = 0;
+    let totalRef = 0;
+    
+    if (refresco === 'Sí') {
+        tamanoRef = document.getElementById('tamano-refresco').value;
+        cantRef = parseInt(document.getElementById('cant-refresco').value) || 0;
+        precioRef = parseFloat(document.getElementById('precio-refresco').value) || 0;
+        totalRef = cantRef * precioRef;
+    }
+
+    // TOTAL FINAL
+    const total = (cantEmp * precioEmp) + totalCombo + totalRef;
+    const totalEmpanadas = cantEmp + (esCombo ? (cantCombo * 2) : 0);
+
+   // GUARDAMOS (usando las variables que capturamos arriba)
+    db.push({ 
+    fecha, 
+    cliente, 
+    tipo: esCombo ? (tipo + " + Combo") : tipo,
+    cantEmp, 
+    cantCombo: esCombo ? cantCombo : 0, 
+    totalEmpanadas: totalEmpanadas, // Guardamos el cálculo real aquí
+    salsa, 
+    refresco, 
+    tamanoRef, 
+    cantRef, 
+    total, 
+    estado: 'Pago' 
+});
+    localStorage.setItem('tw_empanadas', JSON.stringify(db));
+    
+    // Limpieza
+    alert("Venta registrada. Total: $" + total.toFixed(2));
+    document.getElementById('cliente').value = '';
+    document.getElementById('tipo').value = '';
+    document.getElementById('cantidad').value = '';
+    document.getElementById('precio').value = '';
+    document.getElementById('es-combo').value = 'No';
+    document.getElementById('refresco').value = 'No';
+    
+    // Reset visual
+    conmutarCamposRefresco();
+    toggleCombo();
+    actualizarTabla(); 
+}
+
+// --- ACTUALIZAR TABLA (Para ver el combo en el historial) ---
+// Solo cambia la parte del tr.innerHTML en tu función actualizarTabla para incluir la columna Combo:
+// Agrega: <td>${item.esCombo === 'Sí' ? '✅ Combo' : '-'}</td>
 
         function actualizarTabla() {
             const tbody = document.getElementById('tabla-datos');
@@ -225,23 +296,36 @@
         }
 
         function actualizarResumenDiario() {
+            // 1. Calculamos el dinero total (solo de los que están en estado "Pago")
             const dineroTotal = db
                 .filter(item => (item.estado || 'Pago') === 'Pago')
-                .reduce((suma, item) => suma + (item.total || 0), 0);
-            
-            document.getElementById('ganancias-hoy').innerText = `$${dineroTotal.toFixed(2)}`;
-            document.getElementById('personas-hoy').innerText = db.length;
+                .reduce((suma, item) => suma + (Number(item.total) || 0), 0);
 
+            // 2. Calculamos la cantidad de personas (total de registros en la tabla)
+            const totalPersonas = db.length;
+
+            // 3. Actualizamos "Ganado Hoy" y "Personas Hoy"
+            const elGanancias = document.getElementById('ganancias-hoy');
+            if (elGanancias) elGanancias.innerText = `$${dineroTotal.toFixed(2)}`;
+            
+            const elPersonas = document.getElementById('personas-hoy');
+            if (elPersonas) elPersonas.innerText = totalPersonas;
+
+            // 4. Mantenemos la lógica de Empanadas y Combos
             if (esEmpanadas) {
                 const elEmpanadas = document.getElementById('empanadas-totales');
                 if (elEmpanadas) {
-                    const totalEmp = db.reduce((suma, item) => suma + Number(item.cantEmp || 0), 0);
+                    const totalEmp = db.reduce((suma, item) => suma + Number(item.totalEmpanadas || item.cantEmp || 0), 0);
                     elEmpanadas.innerText = totalEmp;
                 }
-            } 
-        }
 
-        function archivarMesActual() {
+                const elCombos = document.getElementById('combos-totales');
+                if (elCombos) {
+                    const totalCombos = db.reduce((suma, item) => suma + Number(item.cantCombo || 0), 0);
+                    elCombos.innerText = totalCombos;
+                }
+            } 
+        }        function archivarMesActual() {
             if (db.length === 0) return;
             const opciones = { month: 'long', year: 'numeric' };
             const mesAnioTexto = new Date().toLocaleDateString('es-ES', opciones).toUpperCase();
