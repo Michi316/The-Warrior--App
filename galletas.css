@@ -43,19 +43,21 @@ body {
 .btn-volver:hover { background: rgba(255, 255, 255, 0.25); }
 
 .contenedor-resumen {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 35px;
+    display: flex;
+    justify-content: space-between; /* Reparte el espacio por igual */
+    gap: 15px; /* Espacio entre los cuadros */
+    width: 100%;
+    margin-bottom: 30px;
 }
 
 .tarjeta-resumen {
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    padding: 20px;
-    border-radius: 14px;
+    flex: 1; /* Esto obliga a que los tres cuadros midan exactamente lo mismo */
+    background: rgba(255, 255, 255, 0.08); /* Mantén el color que ya tenías */
+    padding: 15px;
+    border-radius: 8px;
     text-align: center;
+    border-left: 4px solid #4facfe;
+    min-width: 100px; /* Evita que se aplasten demasiado */
 }
 
 .tarjeta-resumen h3 {
@@ -174,13 +176,58 @@ th { background: rgba(0, 4, 40, 0.4); color: #4facfe; }
 
 .modal-contenido {
     background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-    margin: 8% auto; padding: 30px; border-radius: 16px;
-    width: 90%; max-width: 850px; color: white; position: relative;
+    margin: 8% auto; 
+    padding: 30px; 
+    border-radius: 16px;
+    width: 90%; 
+    max-width: 850px; 
+    color: white; 
+    position: relative;
+    max-height: 80vh; 
+    overflow-y: auto;
 }
 
-.cerrar-modal { position: absolute; top: 15px; right: 22px; color: #fff; font-size: 32px; cursor: pointer; }
-
+.cerrar-modal { 
+    position: sticky; 
+    top: 0px;
+    float: right; 
+    color: #fff; 
+    font-size: 32px; 
+    cursor: pointer; 
+    z-index: 10;
+}
 @media (min-width: 768px) {
     .formulario-admin { grid-template-columns: repeat(4, 1fr) auto; }
     .lista-meses { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Esto asegura que los cuadros de arriba sigan alineados en fila */
+.contenedor-resumen {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    width: 100%;
+    margin-bottom: 30px;
+}
+
+.tarjeta-resumen {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    border-left: 4px solid #4facfe;
+}
+
+/* ESTO ES LO QUE ARREGLA EL FORMULARIO */
+.formulario-admin {
+    display: block !important; /* Fuerza a que vuelva a su estado original */
+    width: 100%;
+}
+
+.fila-formulario {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin-bottom: 15px;
 }

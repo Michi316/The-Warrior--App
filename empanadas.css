@@ -219,10 +219,42 @@ th { background: rgba(0, 4, 40, 0.4); color: #4facfe; }
 
 .modal-contenido {
     background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-    margin: 6% auto; padding: 30px; border-radius: 16px;
-    width: 92%; max-width: 1050px; color: white; position: relative;
+    margin: 6% auto; 
+    padding: 30px; 
+    border-radius: 16px;
+    width: 92%; 
+    max-width: 1050px; 
+    color: white; 
+    position: relative;
     box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+    max-height: 80vh; 
+    overflow-y: auto; 
 }
 
-.cerrar-modal { position: absolute; top: 15px; right: 22px; color: #fff; font-size: 32px; cursor: pointer; }
+.cerrar-modal { 
+    position: sticky; 
+    top: 0px; 
+    float: right;
+    color: #fff; 
+    font-size: 32px; 
+    cursor: pointer; 
+    z-index: 10;
+}
 .cerrar-modal:hover { color: #ff6b6b; }
+.contenedor-resumen {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    width: 100%;
+    margin-bottom: 30px;
+}
+
+.tarjeta-resumen {
+    flex: 1; /* Esto asegura que los 3 se repartan el espacio igual */
+    background: rgba(255, 255, 255, 0.08);
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    border-left: 4px solid #4facfe;
+    min-width: 100px;
+}
