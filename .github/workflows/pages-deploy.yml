@@ -1,0 +1,54 @@
+name: GitHub Pages - Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node (si usas Node.js)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+
+      - name: Build site
+        run: |
+          npm run build
+
+      - name: Detect publish directory
+        id: detect
+        run: |
+          for d in build dist public docs _site; do
+            if [ -d "$d" ] && [ "$(ls -A $d)" ]; then
+              echo "publish_dir=$d" >> $GITHUB_OUTPUT
+              echo "Detected publish dir: $d"
+              exit 0
+            fi
+          done
+          echo "No se encontró ningún directorio de publicación con contenido. Revisar la build."
+          ls -la
+          exit 1
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: ${{ steps.detect.outputs.publish_dir }}
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v1
