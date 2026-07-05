@@ -176,23 +176,23 @@ th { background: rgba(0, 4, 40, 0.4); color: #4facfe; }
 
 .modal-contenido {
     background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-    margin: 8% auto; 
-    padding: 30px; 
+    margin: 10% auto; 
+    padding: 20px; 
     border-radius: 16px;
-    width: 90%; 
+    width: 95%; 
     max-width: 850px; 
     color: white; 
     position: relative;
     max-height: 80vh; 
-    overflow-y: auto;
+    overflow: auto; /* Scroll en ambas direcciones para proteger la tabla */
 }
 
 .cerrar-modal { 
-    position: sticky; 
-    top: 0px;
-    float: right; 
+    position: absolute; 
+    top: 10px; 
+    right: 15px; 
     color: #fff; 
-    font-size: 32px; 
+    font-size: 30px; 
     cursor: pointer; 
     z-index: 10;
 }

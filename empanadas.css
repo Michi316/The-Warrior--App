@@ -219,24 +219,26 @@ th { background: rgba(0, 4, 40, 0.4); color: #4facfe; }
 
 .modal-contenido {
     background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-    margin: 6% auto; 
-    padding: 30px; 
+    margin: 10% auto; /* Ajustado para móviles */
+    padding: 20px; /* Un poco menos de espacio interno en móviles */
     border-radius: 16px;
-    width: 92%; 
+    width: 95%; /* Que aproveche casi toda la pantalla en el cel */
     max-width: 1050px; 
     color: white; 
     position: relative;
     box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+    
+    /* El fix real para móviles: */
     max-height: 80vh; 
-    overflow-y: auto; 
+    overflow: auto; /* Permite scroll vertical y horizontal si la tabla es muy ancha */
 }
 
 .cerrar-modal { 
-    position: sticky; 
-    top: 0px; 
-    float: right;
+    position: absolute; /* Volvemos a absoluto para que no rompa la interfaz */
+    top: 10px; 
+    right: 15px; 
     color: #fff; 
-    font-size: 32px; 
+    font-size: 30px; 
     cursor: pointer; 
     z-index: 10;
 }
